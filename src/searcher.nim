@@ -11,8 +11,18 @@ proc searchFile(file: string, pat: string) =
     defer: fs.close()
 
     var data: TaintedString = ""
+    var line = 0
+    var headWritten = false
     while fs.readLine(data):
-        if contains(data.string, pat): echo file & ": " & data
+        inc(line)
+        if contains(data.string, pat):
+            if not headWritten:
+                echo file
+                headWritten = true
+
+            echo line, ": ", data
+
+    if headWritten: echo ""
 
 proc searchFiles(files: seq[string], pat: string) =
     for file in files:
