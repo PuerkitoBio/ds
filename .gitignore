@@ -1,0 +1,4 @@
+.*.swp
+.*.swo
+src/nimcache/
+src/main
