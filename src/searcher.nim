@@ -1,12 +1,27 @@
-import os, options, sets, sequtils, cpuinfo, threadpool, streams, strutils
+import os, options, sets, sequtils, cpuinfo, threadpool, streams, strutils, pegs
 
 var cores = max(countProcessors(), 1)
+
+type Searcher = object
+    before, after: int
+    text: string
+    pat: Peg
+    cmpFn: proc(s: Searcher, line: string): bool
+
+proc cmpNoCase(s: Searcher, line): bool =
+    contains(line.toLower, s.text)
+
+proc cmpCase(s: Searcher, line): bool =
+    contains(line, s.text)
+
+proc cmpPEG(s: Searcher, line: string): bool =
+    echo "p"
 
 proc resolveFiles(entry: string, tbl: var HashSet[string]) =
     for file in walkDirRec(entry):
         incl(tbl, file)
 
-proc searchFile(file: string, pat: string) =
+proc searchFile(opts: Options, file: string, pat: string) =
     let fs = newFileStream(file, fmRead)
     defer: fs.close()
 
@@ -24,9 +39,9 @@ proc searchFile(file: string, pat: string) =
 
     if headWritten: echo ""
 
-proc searchFiles(files: seq[string], pat: string) =
+proc searchFiles(opts: Options, files: seq[string], pat: string) =
     for file in files:
-        searchFile(file, pat)
+        searchFile(opts, file, pat)
 
 proc search*(opts: Options) =
     var tbl = initSet[string]()
@@ -42,4 +57,4 @@ proc search*(opts: Options) =
     # search in parallel
     parallel:
         for i in 0..perCore.high:
-            spawn searchFiles(perCore[i], opts.pattern)
+            spawn searchFiles(opts, perCore[i], opts.pattern)
